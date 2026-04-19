@@ -72,10 +72,9 @@ io.on('connection', (socket) => {
 
   socket.on('disconnect', () => {
     console.log(`[Socket.io] Disconnected: ${socket.id}`);
-    // Clean up rooms and notify others
+    // Clean up rooms
     for (const roomId in rooms) {
       if (rooms[roomId].includes(socket.id)) {
-        socket.to(roomId).emit('end_call', { roomId }); // Force end call for peers
         rooms[roomId] = rooms[roomId].filter(id => id !== socket.id);
         if (rooms[roomId].length === 0) delete rooms[roomId];
       }
