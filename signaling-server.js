@@ -55,7 +55,16 @@ io.on('connection', (socket) => {
     socket.to(data.roomId).emit('ice-candidate', data);
   });
 
-  // ── Call Status Events ──────────────────────────────────────────────────────
+  socket.on('end_call', (data) => {
+    socket.to(data.roomId).emit('end_call', data);
+    console.log(`[Call] end_call routed in room: ${data.roomId}`);
+  });
+
+  socket.on('reject_call', (data) => {
+    socket.to(data.roomId).emit('reject_call', data);
+    console.log(`[Call] reject_call routed in room: ${data.roomId}`);
+  });
+
   socket.on('call_ended', (data) => {
     socket.to(data.roomId).emit('call_ended', data);
     console.log(`[Call] Ended in room: ${data.roomId}`);
@@ -63,10 +72,13 @@ io.on('connection', (socket) => {
 
   socket.on('disconnect', () => {
     console.log(`[Socket.io] Disconnected: ${socket.id}`);
-    // Clean up rooms
+    // Clean up rooms and notify others
     for (const roomId in rooms) {
-      rooms[roomId] = rooms[roomId].filter(id => id !== socket.id);
-      if (rooms[roomId].length === 0) delete rooms[roomId];
+      if (rooms[roomId].includes(socket.id)) {
+        socket.to(roomId).emit('end_call', { roomId }); // Force end call for peers
+        rooms[roomId] = rooms[roomId].filter(id => id !== socket.id);
+        if (rooms[roomId].length === 0) delete rooms[roomId];
+      }
     }
   });
 });
